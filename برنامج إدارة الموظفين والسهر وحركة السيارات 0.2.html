@@ -1,0 +1,1969 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة الموظفين، السهر وتسكين السيارات الذكي</title>
+    
+    <!-- Google Fonts - Tajawal -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS (Direct CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Tajawal', 'sans-serif'] },
+                    colors: {
+                        brand: { 50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 800: '#166534', 900: '#14532d' },
+                        dark: { 500: '#64748b', 800: '#1e293b', 900: '#0f172a' }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- SheetJS for Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- html2canvas for capturing elements to images -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #f8fafc;
+        }
+        /* Custom Scrollbar for better performance */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        /* PRINT STYLES - Windows 7 Native Compatibility */
+        @media print {
+            html, body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+            .no-print, aside, header, nav, button, input, select, .modal, #modal-print-options {
+                display: none !important;
+            }
+            .print-area {
+                display: block !important;
+                position: static !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+            }
+            th, td {
+                border: 1px solid #94a3b8 !important;
+                padding: 6px !important;
+                font-size: 10pt !important;
+                color: #000000 !important;
+            }
+            .print-header {
+                display: block !important;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased text-slate-800">
+
+    <div class="min-h-screen flex flex-col md:flex-row bg-slate-50 text-slate-800">
+        
+        <!-- SIDEBAR -->
+        <aside class="w-full md:w-64 bg-dark-800 text-slate-100 flex flex-col border-l border-slate-700 shrink-0 shadow-xl no-print">
+            <div class="p-5 border-b border-dark-900 bg-dark-900 flex items-center justify-between">
+                <div class="flex items-center space-x-2 space-x-reverse">
+                    <span class="bg-brand-600 p-2 rounded-lg text-white">
+                        <i class="fa-solid fa-bus text-xl"></i>
+                    </span>
+                    <h1 class="font-bold text-lg leading-tight">المراقب وخطوط الحركة</h1>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 p-4 space-y-1.5 overflow-y-auto">
+                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="nav-btn w-full flex items-center px-4 py-3 rounded-xl text-right transition-all text-sm font-medium bg-brand-600 text-white shadow-lg">
+                    <i class="fa-solid fa-chart-line ml-3 text-lg opacity-80"></i>
+                    لوحة التحكم
+                </button>
+
+                <!-- NEW TAB: QUICK CODE ENTRY -->
+                <button onclick="switchTab('quick_entry')" id="btn-quick_entry" class="nav-btn w-full flex items-center px-4 py-3 rounded-xl text-right transition-all text-sm font-medium hover:bg-dark-900 text-slate-300">
+                    <i class="fa-solid fa-keyboard ml-3 text-lg opacity-80 text-emerald-400"></i>
+                    شاشة الإدخال السريع (كود)
+                </button>
+
+                <button onclick="switchTab('employees')" id="btn-employees" class="nav-btn w-full flex items-center px-4 py-3 rounded-xl text-right transition-all text-sm font-medium hover:bg-dark-900 text-slate-300">
+                    <i class="fa-solid fa-user-group ml-3 text-lg opacity-80"></i>
+                    الموظفين واستيراد إكسيل
+                </button>
+
+                <button onclick="switchTab('overtime')" id="btn-overtime" class="nav-btn w-full flex items-center px-4 py-3 rounded-xl text-right transition-all text-sm font-medium hover:bg-dark-900 text-slate-300">
+                    <i class="fa-solid fa-moon ml-3 text-lg opacity-80"></i>
+                    السهر الإضافي والحضور
+                </button>
+
+                <button onclick="switchTab('transports')" id="btn-transports" class="nav-btn w-full flex items-center px-4 py-3 rounded-xl text-right transition-all text-sm font-medium hover:bg-dark-900 text-slate-300">
+                    <i class="fa-solid fa-truck-ramp-box ml-3 text-lg opacity-80"></i>
+                    تسكين خطوط السيارات
+                </button>
+
+                <div class="pt-4 pb-2 border-t border-slate-700/50 my-2">
+                    <span class="text-xs px-4 text-slate-400 font-bold uppercase tracking-wider">التقارير المجمعة للواتساب</span>
+                </div>
+
+                <!-- RENAMED / RE-ENGINEERED REPORT TAB -->
+                <button onclick="switchTab('report_dept')" id="btn-report_dept" class="nav-btn w-full flex items-center px-4 py-3 rounded-xl text-right transition-all text-sm font-medium hover:bg-dark-900 text-slate-300">
+                    <i class="fa-solid fa-file-invoice-dollar ml-3 text-lg opacity-80"></i>
+                    تقرير السهر والانتقالات
+                </button>
+
+                <button onclick="switchTab('report_cars')" id="btn-report_cars" class="nav-btn w-full flex items-center px-4 py-3 rounded-xl text-right transition-all text-sm font-medium hover:bg-dark-900 text-slate-300">
+                    <i class="fa-solid fa-bus-alt ml-3 text-lg opacity-80"></i>
+                    كشف السيارات المجمع
+                </button>
+            </nav>
+
+            <!-- Bottom Controller Box -->
+            <div class="p-4 border-t border-slate-700/40 bg-dark-900 space-y-2">
+                <button onclick="loadDemoData()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs py-2 px-3 rounded-lg font-bold transition flex items-center justify-center gap-1 shadow-sm">
+                    <i class="fa-solid fa-flask"></i> تحميل بيانات تجريبية
+                </button>
+                <button onclick="clearAllData()" class="w-full bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-200 text-xs py-2 px-3 rounded-lg font-bold transition flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-trash-can"></i> مسح كافة البيانات
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+            
+            <!-- Header bar -->
+            <header class="bg-white border-b border-slate-200 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 no-print">
+                <div>
+                    <h2 id="header-title" class="text-xl font-bold text-slate-800">Dashboard</h2>
+                    <p class="text-xs text-slate-500 mt-1">لوحة التحكم</p>
+                </div>
+
+                <div class="flex items-center space-x-2 space-x-reverse bg-slate-50 border border-slate-200 p-2 rounded-xl">
+                    <span class="text-xs font-bold text-slate-500 px-2"><i class="fa-regular fa-calendar ml-1 text-brand-600"></i> تاريخ التشغيل:</span>
+                    <input type="date" id="selected-date" onchange="onDateChange()" class="bg-white border-0 focus:ring-2 focus:ring-brand-500 text-sm font-bold rounded-lg text-slate-700">
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div class="flex-1 p-6 overflow-y-auto print-area" id="main-content-window">
+                
+                <!-- TAB 1: DASHBOARD -->
+                <div id="tab-dashboard" class="tab-pane space-y-6">
+                    <!-- Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs text-slate-400 font-bold block">إجمالي الكوادر</span>
+                                <span id="stat-total" class="text-2xl font-black text-slate-800">0</span>
+                            </div>
+                            <span class="bg-blue-50 text-blue-600 p-3 rounded-xl"><i class="fa-solid fa-users text-xl"></i></span>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs text-emerald-600 font-bold block flex items-center">حضور اليوم</span>
+                                <span id="stat-present" class="text-2xl font-black text-slate-800">0</span>
+                            </div>
+                            <span class="bg-emerald-50 text-emerald-600 p-3 rounded-xl"><i class="fa-solid fa-circle-check text-xl"></i></span>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs text-rose-500 font-bold block">الغيابات اليوم</span>
+                                <span id="stat-absent" class="text-2xl font-black text-slate-800">0</span>
+                            </div>
+                            <span class="bg-rose-50 text-rose-600 p-3 rounded-xl"><i class="fa-solid fa-circle-xmark text-xl"></i></span>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs text-amber-600 font-bold block">ساهرون بالعمل</span>
+                                <span id="stat-overtime" class="text-2xl font-black text-slate-800">0</span>
+                            </div>
+                            <span class="bg-amber-50 text-amber-600 p-3 rounded-xl"><i class="fa-solid fa-moon text-xl"></i></span>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs text-purple-600 font-bold block">مسكنين بالسيارات</span>
+                                <span id="stat-cars" class="text-2xl font-black text-slate-800">0</span>
+                            </div>
+                            <span class="bg-purple-50 text-purple-600 p-3 rounded-xl"><i class="fa-solid fa-bus text-xl"></i></span>
+                        </div>
+                    </div>
+
+                    <!-- Overtime breakdown -->
+                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                        <h3 class="font-bold text-sm text-slate-600 mb-3"><i class="fa-regular fa-clock ml-1"></i> مستويات سهر اليوم النشط</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 flex justify-between items-center">
+                                <span class="text-xs font-semibold text-slate-500">حتى 7:00 مساءً</span>
+                                <span id="stat-over7" class="bg-indigo-100 text-indigo-700 text-sm font-bold px-2.5 py-1 rounded-lg">0</span>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 flex justify-between items-center">
+                                <span class="text-xs font-semibold text-slate-500">حتى 10:00 مساءً</span>
+                                <span id="stat-over10" class="bg-amber-100 text-amber-700 text-sm font-bold px-2.5 py-1 rounded-lg">0</span>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 flex justify-between items-center">
+                                <span class="text-xs font-semibold text-slate-500">حتى 12:00 منتصف الليل</span>
+                                <span id="stat-over12" class="bg-rose-100 text-rose-700 text-sm font-bold px-2.5 py-1 rounded-lg">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Dashboard Section -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-150 shadow-sm">
+                        <h3 class="font-black text-base text-slate-800 mb-4"><i class="fa-solid fa-tower-broadcast ml-2 text-brand-600"></i> بث الحالة المباشرة للأقسام</h3>
+                        <div id="dashboard-depts-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEW TAB 2: QUICK ENTRY (شاشة الإدخال السريع مع البحث التلقائي) -->
+                <div id="tab-quick_entry" class="tab-pane hidden space-y-6">
+                    <div class="max-w-2xl mx-auto bg-white rounded-3xl p-6 border border-slate-200 shadow-xl space-y-6">
+                        <div class="text-center space-y-2">
+                            <div class="inline-flex bg-emerald-50 text-emerald-700 p-3 rounded-2xl"><i class="fa-solid fa-bolt-lightning text-2xl animate-pulse"></i></div>
+                            <h3 class="font-black text-lg text-slate-800">شاشة الإدخال السريع والذكي</h3>
+                            <p class="text-xs text-slate-500">اكتب كود أو اسم الموظف لتظهر لك اقتراحات فورية واختر منها مباشرة</p>
+                        </div>
+
+                        <!-- Search Code Form with Autocomplete -->
+                        <div class="space-y-3 relative">
+                            <label class="text-xs font-bold text-slate-700 block">ابحث بكتابة الكود أو الاسم:</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
+                                    <i class="fa-solid fa-magnifying-glass text-lg"></i>
+                                </span>
+                                <input type="text" id="quick-code-search" oninput="handleQuickSearchInput()" onkeydown="handleQuickSearchKeyDown(event)" placeholder="اكتب رقم الكود أو اسم الموظف هنا..." class="w-full border-2 border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500 py-3 pr-10 pl-3 rounded-xl font-bold text-lg text-center outline-none" autocomplete="off">
+                                
+                                <!-- Dynamic Autocomplete Dropdown List -->
+                                <div id="quick-autocomplete-dropdown" class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-52 overflow-y-auto z-50 hidden divide-y divide-slate-100">
+                                    <!-- Populated in real-time by JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Result Area (Form) -->
+                        <div id="quick-search-result-panel" class="hidden border border-slate-150 rounded-2xl p-4 bg-slate-50 space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                                <div>
+                                    <span id="quick-emp-name" class="text-base font-black text-slate-800 block">-</span>
+                                    <span id="quick-emp-title-dept" class="text-xs text-slate-500 block">-</span>
+                                    <span id="quick-emp-residence" class="text-[11px] text-slate-400 font-bold block mt-0.5">الإقامة: -</span>
+                                </div>
+                                <span class="bg-brand-50 text-brand-700 border border-brand-200 text-xs font-black px-3 py-1.5 rounded-xl">تم اختياره</span>
+                            </div>
+
+                            <!-- Fast Options Form -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                <div class="space-y-1.5">
+                                    <label class="font-bold text-slate-600 block">تحديد الحالة اليومية:</label>
+                                    <select id="quick-form-attendance" class="w-full bg-white border border-slate-200 p-2.5 rounded-xl font-bold">
+                                        <option value="present">حاضر بالعمل</option>
+                                        <option value="absent">غائب اليوم</option>
+                                    </select>
+                                </div>
+
+                                <div class="space-y-1.5">
+                                    <label class="font-bold text-slate-600 block">ساعات السهر الإضافي اليوم:</label>
+                                    <select id="quick-form-overtime" class="w-full bg-white border border-slate-200 p-2.5 rounded-xl font-bold">
+                                        <option value="بدون">بدون سهر</option>
+                                        <option value="7 مساءً">حتى 7:00 مساءً</option>
+                                        <option value="10 مساءً">حتى 10:00 مساءً</option>
+                                        <option value="12 منتصف الليل">حتى 12:00 منتصف الليل</option>
+                                    </select>
+                                </div>
+
+                                <div class="space-y-1.5">
+                                    <label class="font-bold text-slate-600 block">خط حافلة الحركة اليوم:</label>
+                                    <select id="quick-form-vehicle" class="w-full bg-white border border-slate-200 p-2.5 rounded-xl font-bold">
+                                        <option value="none">بدون تسكين اليوم</option>
+                                    </select>
+                                </div>
+
+                                <div class="space-y-1.5">
+                                    <label class="font-bold text-slate-600 block">اتجاه حركة الخط:</label>
+                                    <select id="quick-form-direction" class="w-full bg-white border border-slate-200 p-2.5 rounded-xl font-bold">
+                                        <option value="ذهاب وإياب">ذهاب وإياب ⇄</option>
+                                        <option value="ذهاب فقط">ذهاب فقط →</option>
+                                        <option value="إياب فقط">إياب فقط ←</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="pt-4">
+                                <button onclick="saveQuickEmployeeAttendance()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm py-3 px-5 rounded-xl shadow-lg transition flex items-center justify-center gap-1">
+                                    <i class="fa-solid fa-circle-check"></i> حفظ وتسجيل في التقرير اليومي (Enter)
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Quick Guide Info -->
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-[11px] text-slate-400 space-y-1">
+                            <strong class="text-slate-600 block mb-1">💡 طريقة العمل الذكية فائقة السرعة:</strong>
+                            <p>1. اكتب رقم كود الموظف، ستظهر النتيجة تلقائياً تحته.</p>
+                            <p>2. اضغط <strong class="text-slate-700">Enter</strong> لاختيار الموظف الأول في القائمة مباشرة.</p>
+                            <p>3. عدّل خياراته اليومية (إذا تطلب الأمر)، ثم اضغط <strong class="text-slate-700">Enter</strong> مجدداً للحفظ السريع والانتقال فوراً للموظف التالي.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: EMPLOYEES -->
+                <div id="tab-employees" class="tab-pane hidden space-y-6">
+                    <div class="bg-white rounded-2xl p-6 border border-slate-150 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-6">
+                        <div class="space-y-1">
+                            <h3 class="font-bold text-base text-slate-800">استيراد جماعي للموظفين من ملف إكسيل (Excel)</h3>
+                            <p class="text-xs text-slate-500">يقوم النظام بتوليد كود الموظف تصاعدياً (1، 2، 3...) فور استيراد الملف بالترتيب.</p>
+                        </div>
+                        <div class="flex gap-3">
+                            <label class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-3 px-5 rounded-xl cursor-pointer shadow-lg transition flex items-center gap-2">
+                                <i class="fa-solid fa-file-excel text-base"></i>
+                                رفع شيت الإكسيل (Excel)
+                                <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" onchange="handleExcelImport(event)" class="hidden">
+                            </label>
+                            <button onclick="openEmployeeModal()" class="bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs py-3 px-5 rounded-xl shadow-lg transition flex items-center gap-2">
+                                <i class="fa-solid fa-user-plus text-base"></i>
+                                إضافة موظف يدوياً
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Search and table -->
+                    <div class="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                            <input type="text" id="emp-search" oninput="renderEmployeesTable()" placeholder="ابحث عن موظف بالاسم، القسم، أو الوظيفة..." class="w-full md:w-96 px-4 py-2 bg-slate-50 border border-slate-200 focus:border-brand-500 rounded-xl text-xs">
+                            <span id="emp-count" class="text-xs text-slate-500 font-bold">العدد: 0</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right text-xs">
+                                <thead class="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
+                                    <tr>
+                                        <th class="p-4">كود الموظف</th>
+                                        <th class="p-4">اسم الموظف</th>
+                                        <th class="p-4">الوظيفة</th>
+                                        <th class="p-4">القسم</th>
+                                        <th class="p-4">محل الإقامة</th>
+                                        <th class="p-4 text-center">الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="employees-table-body" class="divide-y divide-slate-100">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: OVERTIME & ATTENDANCE -->
+                <div id="tab-overtime" class="tab-pane hidden space-y-6">
+                    <div class="bg-white rounded-2xl p-4 border border-slate-150 shadow-sm flex justify-between items-center">
+                        <h3 class="font-bold text-base text-slate-800">إقرار حضور وانصراف وسهر الموظفين اليومي</h3>
+                        <button onclick="markAllPresent()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-4 py-2.5 rounded-xl transition">حضور وتسكين الجميع</button>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right text-xs">
+                                <thead class="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
+                                    <tr>
+                                        <th class="p-4">الكود</th>
+                                        <th class="p-4">الموظف والوظيفة</th>
+                                        <th class="p-4">القسم</th>
+                                        <th class="p-4 text-center">تحديد الحضور</th>
+                                        <th class="p-4 text-center">نوع السهر الإضافي اليوم</th>
+                                        <th class="p-4 text-center">حالة السهر</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="overtime-table-body" class="divide-y divide-slate-100">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 5: VEHICLES & TRANSPORTATION -->
+                <div id="tab-transports" class="tab-pane hidden space-y-6">
+                    <div class="bg-white rounded-2xl p-5 border border-slate-150 shadow-sm flex justify-between items-center">
+                        <h3 class="font-bold text-base text-slate-800">توزيع وتسكين أسطول حافلات وسيارات الحركة</h3>
+                        <button onclick="openVehicleModal()" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg transition">إضافة سيارة جديدة للأسطول</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden lg:col-span-2">
+                            <div class="p-4 border-b border-slate-100 bg-slate-50/50">
+                                <h4 class="font-bold text-xs text-slate-700">التسكين اليومي وتحديد مسار الرحلة</h4>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-right text-xs">
+                                    <thead class="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
+                                        <tr>
+                                            <th class="p-4">كود الموظف</th>
+                                            <th class="p-4">اسم الموظف</th>
+                                            <th class="p-4">محل الإقامة</th>
+                                            <th class="p-4 text-center">حافلة الحركة</th>
+                                            <th class="p-4 text-center">تفاصيل الاتجاه</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="transports-table-body" class="divide-y divide-slate-100">
+                                        <!-- Populated by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Vehicles list -->
+                        <div class="bg-white rounded-2xl border border-slate-150 shadow-sm p-4 h-fit">
+                            <h4 class="font-bold text-xs text-slate-700 mb-4"><i class="fa-solid fa-car-side ml-1 text-brand-600"></i> أسطول المركبات والسيارات النشط</h4>
+                            <div id="vehicles-list-container" class="space-y-3">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 6: CONSOLIDATED OVERTIME & TRANSPORTS REPORT -->
+                <div id="tab-report_dept" class="tab-pane hidden space-y-6">
+                    <div class="bg-white rounded-2xl p-5 border border-slate-150 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 no-print">
+                        <div>
+                            <h3 class="font-bold text-base text-slate-800">تقرير السهر والانتقالات الموحد</h3>
+                            <p class="text-xs text-slate-500 mt-1">يحتوي على كافة الموظفين وجداول تفصيلية للحضور والسهر والانتقالات الفعلي اليوم.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="copyReportText('depts')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg transition flex items-center gap-1">
+                                <i class="fa-solid fa-copy"></i> نسخ كشف الواتساب
+                            </button>
+                            <button onclick="captureConsolidatedReport('depts')" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg transition flex items-center gap-1">
+                                <i class="fa-solid fa-image"></i> تصدير كصورة مجمعة
+                            </button>
+                            <button onclick="openPrintModal('overtime_transports')" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg transition flex items-center gap-1">
+                                <i class="fa-solid fa-print"></i> طباعة الكشف وتصديره
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic HTML Master Dept Table -->
+                    <div id="report-depts-print-area" class="bg-white rounded-2xl border border-slate-150 shadow-sm p-6 space-y-6 print-area">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- TAB 7: CARS REPORT -->
+                <div id="tab-report_cars" class="tab-pane hidden space-y-6">
+                    <div class="bg-white rounded-2xl p-5 border border-slate-150 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 no-print">
+                        <div>
+                            <h3 class="font-bold text-base text-slate-800">كشف حركة وسحب حافلات الموظفين الموحد</h3>
+                            <p class="text-xs text-slate-500 mt-1">بيان بأسماء كافة الركاب المسكنين على حافلات العمل اليوم مع توجيه حركاتهم الفعلي.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="copyReportText('cars')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg transition flex items-center gap-1">
+                                <i class="fa-solid fa-copy"></i> نسخ كشف السيارات
+                            </button>
+                            <button onclick="captureConsolidatedReport('cars')" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg transition flex items-center gap-1">
+                                <i class="fa-solid fa-image"></i> تصدير كصورة مجمعة
+                            </button>
+                            <button onclick="openPrintModal('cars')" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg transition flex items-center gap-1">
+                                <i class="fa-solid fa-print"></i> طباعة الكشف وتصديره
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic HTML Master Cars Table -->
+                    <div id="report-cars-print-area" class="bg-white rounded-2xl border border-slate-150 shadow-sm p-6 space-y-6 print-area">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL 1: ADD/EDIT EMPLOYEE -->
+    <div id="modal-employee" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden border border-slate-100">
+            <div class="p-6 bg-slate-900 text-white flex justify-between items-center">
+                <h3 id="employee-modal-title" class="font-bold text-base">إضافة موظف جديد للسجلات</h3>
+                <button onclick="closeEmployeeModal()" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="saveEmployee(event)" class="p-6 space-y-4">
+                <input type="hidden" id="edit-emp-id">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600 block">اسم الموظف رباعي *</label>
+                    <input type="text" id="form-emp-name" required placeholder="أدخل اسم الموظف كاملاً..." class="w-full border border-slate-200 p-2.5 rounded-xl text-xs">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-600 block">الوظيفة الكادرية *</label>
+                        <input type="text" id="form-emp-title" required placeholder="مهندس، محاسب..." class="w-full border border-slate-200 p-2.5 rounded-xl text-xs">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-600 block">القسم *</label>
+                        <input type="text" id="form-emp-dept" required placeholder="تكنولوجيا المعلومات..." class="w-full border border-slate-200 p-2.5 rounded-xl text-xs">
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600 block">محل الإقامة والسكن</label>
+                    <input type="text" id="form-emp-residence" placeholder="العنوان أو نقطة التجمع..." class="w-full border border-slate-200 p-2.5 rounded-xl text-xs">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600 block">السيارة/الخط الافتراضي للموظف</label>
+                    <select id="form-emp-vehicle" class="w-full border border-slate-200 p-2.5 rounded-xl text-xs bg-white">
+                        <option value="none">بدون سيارة افتراضية</option>
+                    </select>
+                </div>
+                <div class="pt-4 flex justify-end gap-2">
+                    <button type="button" onclick="closeEmployeeModal()" class="bg-slate-100 text-slate-700 py-2.5 px-5 rounded-xl text-xs font-bold">إلغاء</button>
+                    <button type="submit" class="bg-brand-600 text-white py-2.5 px-5 rounded-xl text-xs font-bold">حفظ الموظف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: ADD/EDIT VEHICLE -->
+    <div id="modal-vehicle" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden border border-slate-100">
+            <div class="p-6 bg-slate-900 text-white flex justify-between items-center">
+                <h3 id="vehicle-modal-title" class="font-bold text-base">إضافة سيارة جديدة للأسطول</h3>
+                <button onclick="closeVehicleModal()" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="saveVehicle(event)" class="p-6 space-y-4">
+                <input type="hidden" id="edit-veh-id">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600 block">اسم السيارة أو المسمى الكودي *</label>
+                    <input type="text" id="form-veh-name" required placeholder="ميكروباص 1..." class="w-full border border-slate-200 p-2.5 rounded-xl text-xs">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600 block">خط السير والمناطق المغطاة *</label>
+                    <input type="text" id="form-veh-route" required placeholder="القاهرة - المعادي..." class="w-full border border-slate-200 p-2.5 rounded-xl text-xs">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-600 block">اسم السائق</label>
+                        <input type="text" id="form-veh-driver" placeholder="عم أحمد..." class="w-full border border-slate-200 p-2.5 rounded-xl text-xs">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-600 block">السعة القصوى (الركاب) *</label>
+                        <input type="number" id="form-veh-capacity" required min="1" max="100" class="w-full border border-slate-200 p-2.5 rounded-xl text-xs">
+                    </div>
+                </div>
+                <div class="pt-4 flex justify-end gap-2">
+                    <button type="button" onclick="closeVehicleModal()" class="bg-slate-100 text-slate-700 py-2.5 px-5 rounded-xl text-xs font-bold">إلغاء</button>
+                    <button type="submit" class="bg-brand-600 text-white py-2.5 px-5 rounded-xl text-xs font-bold">حفظ السيارة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: CONSOLIDATED WHATSAPP IMAGE PREVIEW -->
+    <div id="modal-whatsapp" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col text-slate-100">
+            <div class="p-6 bg-slate-950 border-b border-slate-800 flex justify-between items-center">
+                <div>
+                    <h3 id="whatsapp-preview-title" class="font-black text-lg text-emerald-400">معاينة وتصدير التقرير الموحد</h3>
+                    <p class="text-xs text-slate-400 mt-1">كارت إنفوجرافيك موحد مصمم للمشاركة على الهواتف والواتساب بضغطة زر واحدة</p>
+                </div>
+                <button onclick="closeWhatsappModal()" class="bg-slate-800 text-slate-300 hover:text-white p-2 rounded-xl transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="p-6 space-y-6 overflow-y-auto max-h-[60vh]">
+                <div id="whatsapp-loading-indicator" class="flex flex-col items-center justify-center py-12 space-y-3">
+                    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500"></div>
+                    <p class="text-xs text-slate-400 font-bold">جاري تصوير وتجميع جداول الحركة بدقة فائقة...</p>
+                </div>
+
+                <div id="whatsapp-success-view" class="hidden space-y-4">
+                    <div class="bg-emerald-500/10 text-emerald-400 p-4 rounded-2xl border border-emerald-800 text-xs leading-relaxed flex gap-2">
+                        <i class="fa-solid fa-info-circle text-lg mt-0.5"></i>
+                        <div>
+                            <strong class="block text-white mb-1">💡 طريقة الإرسال السريعة في وندوز 7:</strong>
+                            اضغط على زر <strong class="text-white">"نسخ التقرير للذاكرة"</strong> ثم توجه فوراً إلى أي محادثة واتساب واضغط <strong class="text-white">لصق (Ctrl + V)</strong> ليتم إرسال الكشف كصورة مجمعة عالية الجودة فوراً!
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row gap-6 items-center">
+                        <div class="w-full md:w-56 max-h-72 overflow-y-auto rounded-2xl border border-slate-800 shadow-lg">
+                            <img id="whatsapp-output-image" src="" class="w-full h-auto">
+                        </div>
+                        <div class="flex-1 space-y-4">
+                            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs">
+                                <span class="text-slate-400 block font-bold mb-1">الرسالة المرفقة المصاحبة:</span>
+                                <p id="whatsapp-attached-text" class="text-slate-300 line-clamp-3 leading-relaxed"></p>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="copyWhatsappImage()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs py-3 px-4 rounded-xl transition">
+                                    <i class="fa-solid fa-copy"></i> نسخ التقرير للذاكرة
+                                </button>
+                                <button onclick="downloadWhatsappImage()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs py-3 px-4 rounded-xl transition">
+                                    <i class="fa-solid fa-download"></i> تحميل التقرير كصورة
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-4 bg-slate-950 border-t border-slate-850 flex justify-end">
+                <button onclick="closeWhatsappModal()" class="bg-slate-800 hover:bg-slate-750 text-slate-200 px-5 py-2 rounded-xl text-xs font-bold">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW MODAL 4: PRINT & EXCEL OPTIONS -->
+    <div id="modal-print-options" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden border border-slate-100">
+            <div class="p-6 bg-slate-900 text-white flex justify-between items-center">
+                <h3 class="font-bold text-base">خيارات تصدير وطباعة الكشف اليومي</h3>
+                <button onclick="closePrintModal()" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-6 space-y-6">
+                <p class="text-xs text-slate-500 leading-relaxed text-center">حدد الخيار المناسب لتصدير تقريرك على ورقة A4 مصممة ومرتبة بشكل احترافي مع الهيدر والتوقيعات الرسمية في الأسفل.</p>
+                <input type="hidden" id="current-print-report-type">
+                
+                <div class="grid grid-cols-1 gap-3">
+                    <!-- Option 1: PDF Print -->
+                    <button onclick="triggerPdfA4Print()" class="flex items-center gap-4 p-4 border border-slate-200 hover:border-brand-500 hover:bg-emerald-50/50 rounded-2xl transition text-right">
+                        <span class="bg-rose-100 text-rose-600 p-3 rounded-xl"><i class="fa-solid fa-file-pdf text-xl"></i></span>
+                        <div>
+                            <strong class="text-slate-800 block text-xs font-black">تحميل / طباعة كـ PDF (تنسيق A4)</strong>
+                            <span class="text-[10px] text-slate-400 block mt-0.5">ترتيب الهيدر وصفوف التوقيعات مع الحماية من التداخل</span>
+                        </div>
+                    </button>
+
+                    <!-- Option 2: Structured Excel Sheet -->
+                    <button onclick="triggerExcelReportExport()" class="flex items-center gap-4 p-4 border border-slate-200 hover:border-brand-500 hover:bg-emerald-50/50 rounded-2xl transition text-right">
+                        <span class="bg-emerald-100 text-emerald-600 p-3 rounded-xl"><i class="fa-solid fa-file-excel text-xl"></i></span>
+                        <div>
+                            <strong class="text-slate-800 block text-xs font-black">تصدير كشيت Excel مرتب ومعدل</strong>
+                            <span class="text-[10px] text-slate-400 block mt-0.5">تحميل كشف مالي تفصيلي لفتحه ببرنامج إكسيل 2010</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4 bg-slate-50 border-t flex justify-end">
+                <button onclick="closePrintModal()" class="bg-slate-200 text-slate-700 px-5 py-2 rounded-xl text-xs font-bold">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-5 left-5 z-[100] hidden flex items-center p-4 text-white rounded-xl shadow-lg bg-emerald-600 border border-emerald-400 transition-all">
+        <i class="fa-solid fa-circle-check ml-2 text-xl"></i>
+        <div id="toast-message" class="text-sm font-semibold"></div>
+    </div>
+
+    <script>
+        // GLOBAL STATE
+        let state = {
+            employees: [],
+            vehicles: [],
+            attendance: {}, // { "YYYY-MM-DD": { "empId": { present: bool, overtime: string, transport: string, direction: string } } }
+            selectedDate: new Date().toISOString().split('T')[0]
+        };
+
+        // Active Employee for Quick Code Entry
+        let activeQuickEmp = null;
+
+        // On Load initialization
+        window.onload = function() {
+            // Load state from localStorage
+            try {
+                const localEmp = localStorage.getItem('v7_employees');
+                const localVeh = localStorage.getItem('v7_vehicles');
+                const localAtt = localStorage.getItem('v7_attendance');
+                
+                if (localEmp) state.employees = JSON.parse(localEmp);
+                if (localVeh) state.vehicles = JSON.parse(localVeh);
+                if (localAtt) state.attendance = JSON.parse(localAtt);
+            } catch (e) {
+                console.error("Local storage error", e);
+            }
+
+            document.getElementById('selected-date').value = state.selectedDate;
+            
+            // Build default selections
+            updateVehicleSelections();
+            
+            // Render first tab
+            switchTab('dashboard');
+
+            // Click outside autocomplete to close it
+            document.addEventListener('click', function(e) {
+                const dropdown = document.getElementById('quick-autocomplete-dropdown');
+                const searchInput = document.getElementById('quick-code-search');
+                if (dropdown && !dropdown.contains(e.target) && e.target !== searchInput) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        };
+
+        // Synchronize and Save state to local storage
+        function saveState() {
+            localStorage.setItem('v7_employees', JSON.stringify(state.employees));
+            localStorage.setItem('v7_vehicles', JSON.stringify(state.vehicles));
+            localStorage.setItem('v7_attendance', JSON.stringify(state.attendance));
+        }
+
+        // Show quick toast notification (Windows 7 Safe)
+        function showNotification(message) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            toastMsg.innerText = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3500);
+        }
+
+        // TAB SWITCHER (Fast DOM swapping - zero lag)
+        function switchTab(tabId) {
+            // Hide all tab panes
+            const panes = document.getElementsByClassName('tab-pane');
+            for (let i = 0; i < panes.length; i++) {
+                panes[i].classList.add('hidden');
+            }
+            
+            // Remove active style from all sidebar buttons
+            const buttons = document.getElementsByClassName('nav-btn');
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove('bg-brand-600', 'text-white', 'shadow-lg');
+                buttons[i].classList.add('hover:bg-dark-900', 'text-slate-300');
+            }
+
+            // Show selected tab pane
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            
+            // Highlight active button
+            const activeBtn = document.getElementById('btn-' + tabId);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-brand-600', 'text-white', 'shadow-lg');
+                activeBtn.classList.remove('hover:bg-dark-900', 'text-slate-300');
+            }
+
+            // Update title
+            const titles = {
+                dashboard: "Dashboard(Live)",
+                quick_entry: "شاشة الإدخال المباشر والسريع بكود الموظف",
+                employees: "دليل وإدارة شؤون الموظفين والأكواد",
+                overtime: "كشوف الحضور والغياب وساعات السهر اليومية",
+                transports: "تسكين خطوط حافلات الموظفين والرحلات اليومية",
+                report_dept: "تقرير السهر والانتقالات المتكامل",
+                report_cars: "كشف حركة حافلات وسيارات الموظفين اليومي"
+            };
+            document.getElementById('header-title').innerText = titles[tabId] || "نظام الحركة ";
+
+            // Refresh tab-specific views
+            if (tabId === 'dashboard') renderDashboard();
+            else if (tabId === 'employees') renderEmployeesTable();
+            else if (tabId === 'overtime') renderOvertimeTable();
+            else if (tabId === 'transports') renderTransportsTable();
+            else if (tabId === 'report_dept') renderReportDepts();
+            else if (tabId === 'report_cars') renderReportCars();
+            else if (tabId === 'quick_entry') {
+                resetQuickEntryPanel();
+            }
+        }
+
+        // ON DATE CHANGE
+        function onDateChange() {
+            state.selectedDate = document.getElementById('selected-date').value;
+            renderDashboard();
+            renderOvertimeTable();
+            renderTransportsTable();
+            renderReportDepts();
+            renderReportCars();
+        }
+
+        // ==========================
+        // DATA DEMO / ERASE ACTIONS
+        // ==========================
+        function loadDemoData() {
+            state.vehicles = [
+                { id: 'v1', name: 'ميكروباص 1', route: 'مدينة نصر / التجمع', driver: 'عم محمد البطل', capacity: 14 },
+                { id: 'v2', name: 'ميكروباص 2', route: 'الدقي / الهرم', driver: 'عم أحمد شاكر', capacity: 14 },
+                { id: 'v3', name: 'ميني باص 3', route: 'بنها / شبرا الخيمة', driver: 'عم حسين كامل', capacity: 28 },
+                { id: 'v4', name: 'أتوبيس الدعم 4', route: 'المعادي / حلوان', driver: 'كابتن رامي', capacity: 32 }
+            ];
+
+            state.employees = [
+                { id: '1', name: 'أحمد محمود علي', title: 'مهندس برمجيات أول', department: 'تكنولوجيا المعلومات', residence: 'مدينة نصر', defaultVehicleId: 'v1' },
+                { id: '2', name: 'سارة عبد الرحمن', title: 'مدير الموارد البشرية', department: 'الموارد البشرية', residence: 'الدقي', defaultVehicleId: 'v2' },
+                { id: '3', name: 'محمد مصطفى كامل', title: 'محاسب مالي', department: 'الحسابات والمالية', residence: 'التجمع الخامس', defaultVehicleId: 'v1' },
+                { id: '4', name: 'منى السعيد يوسف', title: 'أخصائي دعم فني', department: 'تكنولوجيا المعلومات', residence: 'بنها', defaultVehicleId: 'v3' },
+                { id: '5', name: 'محمود عبد العزيز', title: 'مشرف حركة سيارات', department: 'الخدمات العامة', residence: 'الهرم', defaultVehicleId: 'v2' },
+                { id: '6', name: 'إبراهيم حسن جاد', title: 'ممثل خدمة عملاء', department: 'الدعم الفني والعملاء', residence: 'المعادي', defaultVehicleId: 'v4' }
+            ];
+
+            const today = state.selectedDate;
+            state.attendance[today] = {
+                '1': { present: true, overtime: '7 مساءً', transport: 'v1', direction: 'ذهاب وإياب' },
+                '2': { present: true, overtime: 'بدون', transport: 'v2', direction: 'ذهاب وإياب' },
+                '3': { present: false, overtime: 'بدون', transport: 'none', direction: 'ذهاب وإياب' },
+                '4': { present: true, overtime: '10 مساءً', transport: 'v3', direction: 'ذهاب فقط' },
+                '5': { present: true, overtime: '12 منتصف الليل', transport: 'v2', direction: 'ذهاب وإياب' },
+                '6': { present: true, overtime: 'بدون', transport: 'v4', direction: 'إياب فقط' }
+            };
+
+            saveState();
+            updateVehicleSelections();
+            switchTab('dashboard');
+            showNotification("تم تحميل البيانات التجريبية المتكاملة المحدثة بالأكواد المتسلسلة!");
+        }
+
+        function clearAllData() {
+            if (confirm("هل تود تفريغ وحذف جميع الموظفين والسيارات المسجلة والبدء من جديد؟")) {
+                state.employees = [];
+                state.vehicles = [];
+                state.attendance = {};
+                saveState();
+                updateVehicleSelections();
+                switchTab('dashboard');
+                showNotification("تم تصفير وحذف جميع بيانات النظام بنجاح.");
+            }
+        }
+
+        function updateVehicleSelections() {
+            const select = document.getElementById('form-emp-vehicle');
+            select.innerHTML = '<option value="none">بدون سيارة افتراضية</option>';
+            state.vehicles.forEach(v => {
+                select.innerHTML += `<option value="${v.id}">${v.name} (${v.route})</option>`;
+            });
+
+            // For Quick Entry dropdown
+            const quickVehSelect = document.getElementById('quick-form-vehicle');
+            if (quickVehSelect) {
+                quickVehSelect.innerHTML = '<option value="none">بدون تسكين اليوم</option>';
+                state.vehicles.forEach(v => {
+                    quickVehSelect.innerHTML += `<option value="${v.id}">${v.name} (${v.route})</option>`;
+                });
+            }
+        }
+
+        // ==========================
+        // 1. DASHBOARD COMPONENT
+        // ==========================
+        function getAttRecord(empId) {
+            const date = state.selectedDate;
+            if (state.attendance[date] && state.attendance[date][empId]) {
+                return state.attendance[date][empId];
+            }
+            const emp = state.employees.find(e => e.id === empId);
+            return {
+                present: false,
+                overtime: 'بدون',
+                transport: emp ? emp.defaultVehicleId : 'none',
+                direction: 'ذهاب وإياب'
+            };
+        }
+
+        function renderDashboard() {
+            let total = state.employees.length;
+            let present = 0;
+            let absent = 0;
+            let over7 = 0;
+            let over10 = 0;
+            let over12 = 0;
+            let assignedVehicles = 0;
+
+            const depts = {};
+
+            state.employees.forEach(emp => {
+                const rec = getAttRecord(emp.id);
+                const dept = emp.department || 'عام';
+                if (!depts[dept]) depts[dept] = { total: 0, present: 0, members: [] };
+                
+                depts[dept].total++;
+                
+                if (rec.present) {
+                    present++;
+                    depts[dept].present++;
+                    if (rec.overtime === '7 مساءً') over7++;
+                    else if (rec.overtime === '10 مساءً') over10++;
+                    else if (rec.overtime === '12 منتصف الليل') over12++;
+                    
+                    if (rec.transport && rec.transport !== 'none') assignedVehicles++;
+                } else {
+                    absent++;
+                }
+
+                depts[dept].members.push({ emp, rec });
+            });
+
+            // Update stats
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-present').innerText = present;
+            document.getElementById('stat-absent').innerText = absent;
+            document.getElementById('stat-overtime').innerText = over7 + over10 + over12;
+            document.getElementById('stat-cars').innerText = assignedVehicles;
+
+            document.getElementById('stat-over7').innerText = over7;
+            document.getElementById('stat-over10').innerText = over10;
+            document.getElementById('stat-over12').innerText = over12;
+
+            // Render live depts
+            const container = document.getElementById('dashboard-depts-container');
+            container.innerHTML = '';
+
+            if (total === 0) {
+                container.innerHTML = '<div class="col-span-2 text-center text-slate-400 py-6">يرجى استيراد الموظفين أولاً لتشغيل شاشة البث المباشر.</div>';
+                return;
+            }
+
+            Object.entries(depts).forEach(([deptName, info]) => {
+                let listHtml = '';
+                info.members.forEach(m => {
+                    let tags = '';
+                    if (m.rec.present) {
+                        tags += `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg font-bold">حاضر</span>`;
+                        if (m.rec.overtime !== 'بدون') {
+                            tags += `<span class="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-lg font-bold ml-1">سهر ${m.rec.overtime}</span>`;
+                        }
+                        if (m.rec.transport && m.rec.transport !== 'none') {
+                            const v = state.vehicles.find(v => v.id === m.rec.transport);
+                            tags += `<span class="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-lg font-bold ml-1">${v ? v.name : 'مسكن'}</span>`;
+                        }
+                    } else {
+                        tags += `<span class="bg-rose-50 text-rose-600 border border-rose-100 px-2 py-0.5 rounded-lg font-bold">غائب</span>`;
+                    }
+
+                    listHtml += `
+                        <div class="py-2 flex items-center justify-between text-xs border-b border-slate-50">
+                            <div>
+                                <span class="font-bold text-slate-800">[كود ${m.emp.id}] - ${m.emp.name}</span>
+                                <span class="text-[10px] text-slate-400 block">${m.emp.title}</span>
+                            </div>
+                            <div class="flex items-center gap-1">${tags}</div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML += `
+                    <div class="bg-slate-50/50 border border-slate-200/60 rounded-2xl overflow-hidden shadow-sm">
+                        <div class="bg-slate-100 p-3 flex justify-between items-center border-b border-slate-200">
+                            <span class="font-bold text-slate-700 text-sm">${deptName}</span>
+                            <span class="text-xs bg-slate-200 text-slate-600 px-2.5 py-0.5 rounded-full font-bold">حضور: ${info.present} من ${info.total}</span>
+                        </div>
+                        <div class="p-4 space-y-1 max-h-52 overflow-y-auto">${listHtml}</div>
+                    </div>
+                `;
+            });
+        }
+
+        // ===============================================
+        // NEW IMPROVED FEATURE: REAL-TIME AUTOCOMPLETE
+        // ===============================================
+        function resetQuickEntryPanel() {
+            activeQuickEmp = null;
+            document.getElementById('quick-code-search').value = '';
+            document.getElementById('quick-search-result-panel').classList.add('hidden');
+            const dropdown = document.getElementById('quick-autocomplete-dropdown');
+            if (dropdown) {
+                dropdown.innerHTML = '';
+                dropdown.classList.add('hidden');
+            }
+            document.getElementById('quick-code-search').focus();
+        }
+
+        function handleQuickSearchInput() {
+            const query = document.getElementById('quick-code-search').value.trim().toLowerCase();
+            const dropdown = document.getElementById('quick-autocomplete-dropdown');
+            dropdown.innerHTML = '';
+
+            if (!query) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            // Filter employees by Code (ID) or Name
+            const matches = state.employees.filter(emp => 
+                String(emp.id).toLowerCase().includes(query) || 
+                emp.name.toLowerCase().includes(query)
+            );
+
+            if (matches.length === 0) {
+                dropdown.innerHTML = `
+                    <div class="p-3.5 text-xs text-slate-400 text-center italic">
+                        <i class="fa-solid fa-circle-info ml-1"></i> لا يوجد موظف مطابق لهذا الكود أو الاسم
+                    </div>
+                `;
+                dropdown.classList.remove('hidden');
+                return;
+            }
+
+            matches.forEach(emp => {
+                const item = document.createElement('div');
+                item.className = "p-3 text-xs font-bold text-slate-700 hover:bg-brand-50 hover:text-brand-700 cursor-pointer transition-all flex justify-between items-center";
+                item.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="bg-brand-100 text-brand-800 text-[11px] px-2 py-0.5 rounded-lg font-black">كود ${emp.id}</span>
+                        <span>${emp.name}</span>
+                    </div>
+                    <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded">${emp.department}</span>
+                `;
+                item.onclick = function() {
+                    selectEmployeeForQuickEntry(emp.id);
+                };
+                dropdown.appendChild(item);
+            });
+
+            dropdown.classList.remove('hidden');
+        }
+
+        function handleQuickSearchKeyDown(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const dropdown = document.getElementById('quick-autocomplete-dropdown');
+                
+                // If dropdown list is visible, select the top suggestion automatically
+                if (!dropdown.classList.contains('hidden')) {
+                    const firstItem = dropdown.querySelector('.cursor-pointer');
+                    if (firstItem) {
+                        firstItem.click();
+                        return;
+                    }
+                }
+
+                // If result panel is already visible, save current data
+                if (activeQuickEmp && !document.getElementById('quick-search-result-panel').classList.contains('hidden')) {
+                    saveQuickEmployeeAttendance();
+                }
+            }
+        }
+
+        function selectEmployeeForQuickEntry(empId) {
+            const emp = state.employees.find(e => String(e.id) === String(empId));
+            if (!emp) return;
+
+            activeQuickEmp = emp;
+            const rec = getAttRecord(emp.id);
+
+            // Populate UI fields
+            document.getElementById('quick-emp-name').innerText = emp.name;
+            document.getElementById('quick-emp-title-dept').innerText = `${emp.title} | ${emp.department}`;
+            document.getElementById('quick-emp-residence').innerText = `محل الإقامة: ${emp.residence || 'غير مسجل'}`;
+            
+            document.getElementById('quick-form-attendance').value = rec.present ? "present" : "absent";
+            document.getElementById('quick-form-overtime').value = rec.overtime || "بدون";
+            
+            // Update vehicle options in case vehicles changed
+            updateVehicleSelections();
+            document.getElementById('quick-form-vehicle').value = rec.transport || "none";
+            document.getElementById('quick-form-direction').value = rec.direction || "ذهاب وإياب";
+
+            document.getElementById('quick-search-result-panel').classList.remove('hidden');
+            
+            // Sync search box value and hide autocomplete list
+            document.getElementById('quick-code-search').value = emp.id;
+            document.getElementById('quick-autocomplete-dropdown').classList.add('hidden');
+        }
+
+        function saveQuickEmployeeAttendance() {
+            if (!activeQuickEmp) return;
+
+            const date = state.selectedDate;
+            if (!state.attendance[date]) state.attendance[date] = {};
+
+            const present = document.getElementById('quick-form-attendance').value === "present";
+            const overtime = document.getElementById('quick-form-overtime').value;
+            const transport = document.getElementById('quick-form-vehicle').value;
+            const direction = document.getElementById('quick-form-direction').value;
+
+            state.attendance[date][activeQuickEmp.id] = {
+                present: present,
+                overtime: present ? overtime : 'بدون',
+                transport: present ? transport : 'none',
+                direction: present ? direction : 'ذهاب وإياب'
+            };
+
+            saveState();
+            
+            showNotification(`✓ تم بنجاح حفظ الحضور والسهر للموظف: ${activeQuickEmp.name}`);
+
+            // Reset Quick entry for the next operation
+            resetQuickEntryPanel();
+        }
+
+        // ==========================
+        // 2. EMPLOYEES COMPONENT
+        // ==========================
+        function renderEmployeesTable() {
+            const body = document.getElementById('employees-table-body');
+            const search = document.getElementById('emp-search').value.toLowerCase();
+            body.innerHTML = '';
+
+            const filtered = state.employees.filter(emp => 
+                emp.name.toLowerCase().includes(search) ||
+                emp.department.toLowerCase().includes(search) ||
+                emp.title.toLowerCase().includes(search) ||
+                String(emp.id).includes(search)
+            );
+
+            document.getElementById('emp-count').innerText = "العدد: " + filtered.length;
+
+            if (filtered.length === 0) {
+                body.innerHTML = `<tr><td colSpan="6" class="p-8 text-center text-slate-400">لا يوجد موظفين مسجلين حالياً.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(emp => {
+                const veh = state.vehicles.find(v => v.id === emp.defaultVehicleId);
+                body.innerHTML += `
+                    <tr class="hover:bg-slate-50/50">
+                        <td class="p-4 font-black text-brand-700 text-center bg-brand-50/20">${emp.id}</td>
+                        <td class="p-4 font-bold text-slate-800">${emp.name}</td>
+                        <td class="p-4 text-slate-600">${emp.title}</td>
+                        <td class="p-4 font-semibold">${emp.department}</td>
+                        <td class="p-4 text-slate-500">${emp.residence || '-'}</td>
+                        <td class="p-4 text-center">
+                            <div class="flex items-center justify-center gap-1.5">
+                                <button onclick="editEmployee('${emp.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 py-1.5 px-3 rounded-lg font-bold transition text-[11px]"><i class="fa-solid fa-pencil"></i> تعديل</button>
+                                <button onclick="deleteEmployee('${emp.id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 py-1.5 px-3 rounded-lg font-bold transition text-[11px]"><i class="fa-solid fa-trash"></i> حذف</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function openEmployeeModal(empId = '') {
+            const modal = document.getElementById('modal-employee');
+            modal.classList.remove('hidden');
+
+            if (empId) {
+                const emp = state.employees.find(e => e.id === empId);
+                document.getElementById('employee-modal-title').innerText = "تعديل بيانات الموظف: " + emp.name;
+                document.getElementById('edit-emp-id').value = emp.id;
+                document.getElementById('form-emp-name').value = emp.name;
+                document.getElementById('form-emp-title').value = emp.title;
+                document.getElementById('form-emp-dept').value = emp.department;
+                document.getElementById('form-emp-residence').value = emp.residence || '';
+                document.getElementById('form-emp-vehicle').value = emp.defaultVehicleId || 'none';
+            } else {
+                document.getElementById('employee-modal-title').innerText = "إضافة موظف جديد للسجلات";
+                document.getElementById('edit-emp-id').value = '';
+                document.getElementById('form-emp-name').value = '';
+                document.getElementById('form-emp-title').value = '';
+                document.getElementById('form-emp-dept').value = '';
+                document.getElementById('form-emp-residence').value = '';
+                document.getElementById('form-emp-vehicle').value = 'none';
+            }
+        }
+
+        function closeEmployeeModal() {
+            document.getElementById('modal-employee').classList.add('hidden');
+        }
+
+        function saveEmployee(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-emp-id').value;
+            const name = document.getElementById('form-emp-name').value.trim();
+            const title = document.getElementById('form-emp-title').value.trim();
+            const department = document.getElementById('form-emp-dept').value.trim();
+            const residence = document.getElementById('form-emp-residence').value.trim();
+            const defaultVehicleId = document.getElementById('form-emp-vehicle').value;
+
+            if (id) {
+                // Edit
+                state.employees = state.employees.map(emp => emp.id === id ? { id, name, title, department, residence, defaultVehicleId } : emp);
+                showNotification("تم تحديث بيانات الموظف بنجاح");
+            } else {
+                // Add - Auto incremental integer ID
+                let nextId = 1;
+                if (state.employees.length > 0) {
+                    const ids = state.employees.map(emp => parseInt(emp.id) || 0);
+                    nextId = Math.max(...ids) + 1;
+                }
+                const newEmp = { id: String(nextId), name, title, department, residence, defaultVehicleId };
+                state.employees.push(newEmp);
+                showNotification(`تم إضافة الموظف الجديد بنجاح بكود متسلسل: ${nextId}`);
+            }
+
+            saveState();
+            closeEmployeeModal();
+            renderEmployeesTable();
+        }
+
+        function deleteEmployee(empId) {
+            if (confirm("هل أنت متأكد من حذف هذا الموظف؟")) {
+                state.employees = state.employees.filter(e => e.id !== empId);
+                saveState();
+                renderEmployeesTable();
+                showNotification("تمت إزالة الموظف من السجلات.");
+            }
+        }
+
+        // Excel Import (Windows 7 Safe, pure SheetJS implementation)
+        function handleExcelImport(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const data = evt.target.result;
+                    const workbook = XLSX.read(data, { type: 'binary' });
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const rows = XLSX.utils.sheet_to_json(sheet);
+
+                    if (rows.length === 0) {
+                        showNotification("الملف فارغ!");
+                        return;
+                    }
+
+                    // Start assigning sequential ID from the next available integer code
+                    let nextId = 1;
+                    if (state.employees.length > 0) {
+                        const ids = state.employees.map(emp => parseInt(emp.id) || 0);
+                        nextId = Math.max(...ids) + 1;
+                    }
+
+                    let count = 0;
+                    rows.forEach((row) => {
+                        const name = row['اسم الموظف'] || row['الاسم'] || row['Name'] || '';
+                        const title = row['الوظيفة'] || row['الوظيفه'] || row['Title'] || '';
+                        const department = row['القسم'] || row['Department'] || '';
+                        const residence = row['محل الإقامة'] || row['محل الاقامه'] || row['العنوان'] || '';
+
+                        if (name) {
+                            state.employees.push({
+                                id: String(nextId), // Clean integer sequence code
+                                name: String(name).trim(),
+                                title: String(title).trim(),
+                                department: String(department).trim(),
+                                residence: String(residence).trim(),
+                                defaultVehicleId: 'none'
+                            });
+                            nextId++;
+                            count++;
+                        }
+                    });
+
+                    saveState();
+                    renderEmployeesTable();
+                    showNotification(`تم استيراد ${count} موظف بنجاح وتعيين أكوادهم من [كود ${nextId - count}] إلى [كود ${nextId - 1}]`);
+                } catch (err) {
+                    console.error(err);
+                    showNotification("حدث خطأ أثناء فك وتفسير ملف الإكسيل!");
+                }
+            };
+            reader.readAsBinaryString(file);
+            e.target.value = '';
+        }
+
+        // ==========================
+        // 3. OVERTIME & ATTENDANCE COMPONENT
+        // ==========================
+        function renderOvertimeTable() {
+            const body = document.getElementById('overtime-table-body');
+            body.innerHTML = '';
+
+            if (state.employees.length === 0) {
+                body.innerHTML = `<tr><td colSpan="6" class="p-8 text-center text-slate-400">لا يوجد موظفين مسجلين حالياً.</td></tr>`;
+                return;
+            }
+
+            state.employees.forEach(emp => {
+                const rec = getAttRecord(emp.id);
+                
+                const attendanceBtn = rec.present 
+                    ? `<button onclick="setAttendance('${emp.id}', false)" class="bg-emerald-600 text-white border border-emerald-500 py-1.5 px-4 rounded-xl font-bold text-[11px] shadow-sm flex items-center justify-center gap-1 mx-auto"><i class="fa-solid fa-check"></i> حاضر</button>`
+                    : `<button onclick="setAttendance('${emp.id}', true)" class="bg-slate-100 text-slate-500 border border-slate-200 py-1.5 px-4 rounded-xl font-bold text-[11px] flex items-center justify-center gap-1 mx-auto"><i class="fa-solid fa-xmark"></i> غائب</button>`;
+
+                const overtimeHtml = `
+                    <div class="inline-flex gap-1 bg-slate-100 p-1 rounded-xl">
+                        <button onclick="setOvertime('${emp.id}', 'بدون')" class="py-1 px-3 rounded-lg text-[10px] font-bold ${rec.overtime === 'بدون' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'}">بدون سهر</button>
+                        <button onclick="setOvertime('${emp.id}', '7 مساءً')" class="py-1 px-3 rounded-lg text-[10px] font-bold ${rec.overtime === '7 مساءً' ? 'bg-indigo-600 text-white' : 'text-slate-500'}">7م</button>
+                        <button onclick="setOvertime('${emp.id}', '10 مساءً')" class="py-1 px-3 rounded-lg text-[10px] font-bold ${rec.overtime === '10 مساءً' ? 'bg-amber-50 text-amber-900 font-black' : 'text-slate-500'}">10م</button>
+                        <button onclick="setOvertime('${emp.id}', '12 منتصف الليل')" class="py-1 px-3 rounded-lg text-[10px] font-bold ${rec.overtime === '12 منتصف الليل' ? 'bg-rose-600 text-white' : 'text-slate-500'}">12ص</button>
+                    </div>
+                `;
+
+                const tag = rec.overtime !== 'بدون' ? `<span class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 py-1 px-2.5 rounded-full font-bold text-[10px]"><i class="fa-solid fa-moon"></i> سهر</span>` : `<span class="text-slate-300">-</span>`;
+
+                body.innerHTML += `
+                    <tr class="hover:bg-slate-50/40">
+                        <td class="p-4 font-black text-brand-600 text-center bg-brand-50/10">${emp.id}</td>
+                        <td class="p-4">
+                            <span class="font-bold text-slate-800 block">${emp.name}</span>
+                            <span class="text-[10px] text-slate-400 block">${emp.title}</span>
+                        </td>
+                        <td class="p-4"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[11px] font-bold">${emp.department}</span></td>
+                        <td class="p-4 text-center">${attendanceBtn}</td>
+                        <td class="p-4 text-center">${overtimeHtml}</td>
+                        <td class="p-4 text-center">${tag}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function setAttendance(empId, isPresent) {
+            const date = state.selectedDate;
+            if (!state.attendance[date]) state.attendance[date] = {};
+            
+            const rec = getAttRecord(empId);
+            rec.present = isPresent;
+            if (!isPresent) {
+                rec.overtime = 'بدون';
+                rec.transport = 'none';
+            } else {
+                const emp = state.employees.find(e => e.id === empId);
+                rec.transport = emp.defaultVehicleId || 'none';
+            }
+
+            state.attendance[date][empId] = rec;
+            saveState();
+            renderOvertimeTable();
+        }
+
+        function setOvertime(empId, level) {
+            const date = state.selectedDate;
+            if (!state.attendance[date]) state.attendance[date] = {};
+            
+            const rec = getAttRecord(empId);
+            rec.overtime = level;
+            if (level !== 'بدون') rec.present = true; // Automark present if has overtime
+
+            state.attendance[date][empId] = rec;
+            saveState();
+            renderOvertimeTable();
+        }
+
+        function markAllPresent() {
+            const date = state.selectedDate;
+            if (!state.attendance[date]) state.attendance[date] = {};
+            
+            state.employees.forEach(emp => {
+                const rec = getAttRecord(emp.id);
+                rec.present = true;
+                rec.transport = emp.defaultVehicleId || 'none';
+                state.attendance[date][emp.id] = rec;
+            });
+
+            saveState();
+            renderOvertimeTable();
+            showNotification("تم تسجيل حضور الموظفين بالكامل لهذا اليوم وتسكينهم افتراضياً.");
+        }
+
+        // ==========================
+        // 4. VEHICLES & TRANSPORTS
+        // ==========================
+        function renderTransportsTable() {
+            const body = document.getElementById('transports-table-body');
+            body.innerHTML = '';
+
+            if (state.employees.length === 0) {
+                body.innerHTML = `<tr><td colSpan="5" class="p-8 text-center text-slate-400">لا يوجد ركاب لتسكينهم. يرجى إدخال الموظفين وتعديل الحضور.</td></tr>`;
+                return;
+            }
+
+            state.employees.forEach(emp => {
+                const rec = getAttRecord(emp.id);
+                if (!rec.present) return; // Only assign transportation to present employees
+
+                // Options for vehicles selection
+                let optionsHtml = `<option value="none">بدون تسكين اليوم</option>`;
+                state.vehicles.forEach(v => {
+                    optionsHtml += `<option value="${v.id}" ${rec.transport === v.id ? 'selected' : ''}>${v.name}</option>`;
+                });
+
+                body.innerHTML += `
+                    <tr class="hover:bg-slate-50/40">
+                        <td class="p-4 font-black text-brand-600 text-center bg-brand-50/10">${emp.id}</td>
+                        <td class="p-4">
+                            <span class="font-bold text-slate-800 block">${emp.name}</span>
+                            <span class="text-[10px] text-slate-400 block">${emp.title} | ${emp.department}</span>
+                        </td>
+                        <td class="p-4 font-semibold text-slate-500">${emp.residence || 'غير مسجل'}</td>
+                        <td class="p-4 text-center">
+                            <select onchange="changeTransport('${emp.id}', this.value)" class="bg-white border border-slate-200 py-1.5 px-2.5 rounded-lg font-bold text-slate-700 text-xs cursor-pointer">
+                                ${optionsHtml}
+                            </select>
+                        </td>
+                        <td class="p-4 text-center">
+                            <select onchange="changeTransportDirection('${emp.id}', this.value)" class="bg-white border border-slate-200 py-1.5 px-2 rounded-lg font-bold text-slate-700 text-xs cursor-pointer">
+                                <option value="ذهاب وإياب" ${rec.direction === 'ذهاب وإياب' ? 'selected' : ''}>ذهاب وإياب ⇄</option>
+                                <option value="ذهاب فقط" ${rec.direction === 'ذهاب فقط' ? 'selected' : ''}>ذهاب فقط →</option>
+                                <option value="إياب فقط" ${rec.direction === 'إياب فقط' ? 'selected' : ''}>إياب فقط ←</option>
+                            </select>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            renderVehiclesConfiguration();
+        }
+
+        function changeTransport(empId, vehId) {
+            const date = state.selectedDate;
+            if (!state.attendance[date]) state.attendance[date] = {};
+            const rec = getAttRecord(empId);
+            rec.transport = vehId;
+            state.attendance[date][empId] = rec;
+            saveState();
+            renderTransportsTable();
+        }
+
+        function changeTransportDirection(empId, dir) {
+            const date = state.selectedDate;
+            if (!state.attendance[date]) state.attendance[date] = {};
+            const rec = getAttRecord(empId);
+            rec.direction = dir;
+            state.attendance[date][empId] = rec;
+            saveState();
+        }
+
+        function renderVehiclesConfiguration() {
+            const container = document.getElementById('vehicles-list-container');
+            container.innerHTML = '';
+
+            if (state.vehicles.length === 0) {
+                container.innerHTML = `<div class="p-4 text-center text-slate-400 italic text-xs">لا يوجد حافلات مسجلة في الأسطول.</div>`;
+                return;
+            }
+
+            state.vehicles.forEach(veh => {
+                // Calculate current passenger counts
+                let passengersCount = 0;
+                state.employees.forEach(e => {
+                    const rec = getAttRecord(e.id);
+                    if (rec.present && rec.transport === veh.id) passengersCount++;
+                });
+
+                container.innerHTML += `
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between">
+                        <div>
+                            <span class="text-xs font-bold text-slate-800 block">${veh.name} [سعة: ${veh.capacity}]</span>
+                            <span class="text-[10px] text-slate-500 block">خط: ${veh.route} | سائق: ${veh.driver}</span>
+                            <span class="text-[10px] font-bold text-brand-700 block mt-1">الركاب اليوم: ${passengersCount} راكب</span>
+                        </div>
+                        <div class="flex gap-1.5">
+                            <button onclick="editVehicle('${veh.id}')" class="bg-white border hover:bg-slate-100 text-slate-600 p-1.5 rounded-lg text-[10px]"><i class="fa-solid fa-pencil"></i></button>
+                            <button onclick="deleteVehicle('${veh.id}')" class="bg-white border hover:bg-rose-50 text-rose-600 p-1.5 rounded-lg text-[10px]"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function openVehicleModal(vehId = '') {
+            const modal = document.getElementById('modal-vehicle');
+            modal.classList.remove('hidden');
+
+            if (vehId) {
+                const veh = state.vehicles.find(v => v.id === vehId);
+                document.getElementById('vehicle-modal-title').innerText = "تعديل بيانات الحافلة: " + veh.name;
+                document.getElementById('edit-veh-id').value = veh.id;
+                document.getElementById('form-veh-name').value = veh.name;
+                document.getElementById('form-veh-route').value = veh.route;
+                document.getElementById('form-veh-driver').value = veh.driver;
+                document.getElementById('form-veh-capacity').value = veh.capacity;
+            } else {
+                document.getElementById('vehicle-modal-title').innerText = "إضافة سيارة جديدة للأسطول";
+                document.getElementById('edit-veh-id').value = '';
+                document.getElementById('form-veh-name').value = '';
+                document.getElementById('form-veh-route').value = '';
+                document.getElementById('form-veh-driver').value = '';
+                document.getElementById('form-veh-capacity').value = 14;
+            }
+        }
+
+        function closeVehicleModal() {
+            document.getElementById('modal-vehicle').classList.add('hidden');
+        }
+
+        function saveVehicle(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-veh-id').value;
+            const name = document.getElementById('form-veh-name').value.trim();
+            const route = document.getElementById('form-veh-route').value.trim();
+            const driver = document.getElementById('form-veh-driver').value.trim();
+            const capacity = Number(document.getElementById('form-veh-capacity').value) || 14;
+
+            if (id) {
+                state.vehicles = state.vehicles.map(v => v.id === id ? { id, name, route, driver, capacity } : v);
+                showNotification("تم تحديث بيانات السيارة بنجاح");
+            } else {
+                const newVeh = { id: 'v' + Date.now(), name, route, driver, capacity };
+                state.vehicles.push(newVeh);
+                showNotification("تمت إضافة السيارة الجديدة للأسطول");
+            }
+
+            saveState();
+            closeVehicleModal();
+            updateVehicleSelections();
+            renderTransportsTable();
+        }
+
+        function editVehicle(vehId) {
+            openVehicleModal(vehId);
+        }
+
+        function deleteVehicle(vehId) {
+            if (confirm("هل أنت متأكد من إزالة هذه المركبة من الأسطول؟")) {
+                state.vehicles = state.vehicles.filter(v => v.id !== vehId);
+                saveState();
+                updateVehicleSelections();
+                renderTransportsTable();
+                showNotification("تم إزالة الحافلة من السجلات.");
+            }
+        }
+
+        function editEmployee(empId) {
+            openEmployeeModal(empId);
+        }
+
+        // ===================================
+        // 5. DEPT & VEHICLE REPORT RENDERING
+        // ===================================
+        function renderReportDepts() {
+            const printArea = document.getElementById('report-depts-print-area');
+            printArea.innerHTML = '';
+
+            if (state.employees.length === 0) {
+                printArea.innerHTML = `<p class="text-center text-slate-400 italic">لا يوجد موظفين مسجلين لإصدار التقارير اليوم.</p>`;
+                return;
+            }
+
+            // Report Header
+            printArea.innerHTML += `
+                <div class="text-center space-y-2 pb-6 border-b border-slate-200">
+                    <span class="bg-emerald-50 text-emerald-800 border border-emerald-300 font-black text-xs px-4 py-1 rounded-full">تقرير السهر والانتقالات اليومي الموحد</span>
+                    <h2 class="text-xl font-black text-slate-800">كشف حركة وسهر وحافلات الكوادر بالكامل</h2>
+                    <p class="text-xs text-slate-500 font-bold">تاريخ التشغيل: ${state.selectedDate}</p>
+                </div>
+            `;
+
+            let rowsHtml = '';
+            state.employees.forEach(emp => {
+                const rec = getAttRecord(emp.id);
+                const statusTag = rec.present 
+                    ? `<span class="text-emerald-700 font-black">حاضر</span>`
+                    : `<span class="text-rose-600 font-medium">غائب</span>`;
+
+                const overTag = rec.overtime !== 'بدون' ? rec.overtime : '-';
+                const vehName = rec.present && rec.transport !== 'none' 
+                    ? (state.vehicles.find(v => v.id === rec.transport)?.name || 'مسكن') 
+                    : '-';
+                
+                rowsHtml += `
+                    <tr class="border-b border-slate-100 text-slate-700 hover:bg-slate-50/50">
+                        <td class="p-3 font-bold text-slate-900 text-center bg-slate-50">${emp.id}</td>
+                        <td class="p-3 font-bold text-slate-900">${emp.name}</td>
+                        <td class="p-3 text-slate-500">${emp.department}</td>
+                        <td class="p-3 text-slate-500">${emp.title}</td>
+                        <td class="p-3 text-center">${statusTag}</td>
+                        <td class="p-3 text-center font-bold">${overTag}</td>
+                        <td class="p-3 text-center text-purple-700 font-bold">${vehName}</td>
+                        <td class="p-3 text-center text-slate-400 font-medium">${rec.direction || '-'}</td>
+                    </tr>
+                `;
+            });
+
+            printArea.innerHTML += `
+                <div class="space-y-3">
+                    <table class="w-full text-right text-[11px] border-collapse">
+                        <thead>
+                            <tr class="bg-slate-900 text-white border-b border-slate-300">
+                                <th class="p-3 text-center w-12">كود</th>
+                                <th class="p-3 text-right">اسم الموظف</th>
+                                <th class="p-3 text-right">القسم</th>
+                                <th class="p-3 text-right">الوظيفة</th>
+                                <th class="p-3 text-center">الحضور</th>
+                                <th class="p-3 text-center">ساعات السهر</th>
+                                <th class="p-3 text-center">السيارة</th>
+                                <th class="p-3 text-center">الاتجاه</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+
+                    <!-- Signature Block for official printing -->
+                    <div class="hidden print:flex justify-between pt-12 text-xs border-t border-dashed border-slate-300 mt-12">
+                        <div>
+                            <p class="font-bold text-slate-600">توقيع مسئول الموارد البشرية:</p>
+                            <p class="mt-10 text-slate-400">...................................</p>
+                        </div>
+                        <div>
+                            <p class="font-bold text-slate-600">توقيع مدير الحركة والسيارات:</p>
+                            <p class="mt-10 text-slate-400">...................................</p>
+                        </div>
+                        <div class="text-left">
+                            <p class="font-bold text-slate-600">توقيع الإدارة المالية والاعتماد:</p>
+                            <p class="mt-10 text-slate-400">...................................</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderReportCars() {
+            const printArea = document.getElementById('report-cars-print-area');
+            printArea.innerHTML = '';
+
+            if (state.vehicles.length === 0) {
+                printArea.innerHTML = `<p class="text-center text-slate-400 italic">لا يوجد حافلات مسجلة في الأسطول لإصدار كشوف الحركة اليوم.</p>`;
+                return;
+            }
+
+            printArea.innerHTML += `
+                <div class="text-center space-y-2 pb-6 border-b border-slate-200">
+                    <span class="bg-purple-50 text-purple-800 border border-purple-300 font-black text-xs px-3 py-1 rounded-full">كشف تسكين حافلات الحركة الموحد</span>
+                    <h2 class="text-xl font-black text-slate-800">بيان تفصيلي بأسماء الركاب والرحلات لخطوط الحركة اليومية</h2>
+                    <p class="text-xs text-slate-500 font-bold">تاريخ التشغيل: ${state.selectedDate}</p>
+                </div>
+            `;
+
+            state.vehicles.forEach(veh => {
+                let rowsHtml = '';
+                let passengersCount = 0;
+
+                state.employees.forEach(emp => {
+                    const rec = getAttRecord(emp.id);
+                    if (rec.present && rec.transport === veh.id) {
+                        passengersCount++;
+                        rowsHtml += `
+                            <tr class="border-b border-slate-100 text-slate-700">
+                                <td class="p-3 text-center bg-slate-50">${emp.id}</td>
+                                <td class="p-3 font-bold text-slate-900">${emp.name}</td>
+                                <td class="p-3 text-slate-500">${emp.department}</td>
+                                <td class="p-3 text-slate-500">${emp.title}</td>
+                                <td class="p-3 font-semibold text-slate-600">${emp.residence || '-'}</td>
+                                <td class="p-3 text-center text-purple-700 font-black">${rec.direction || 'ذهاب وإياب'}</td>
+                            </tr>
+                        `;
+                    }
+                });
+
+                if (passengersCount === 0) {
+                    rowsHtml = `<tr><td colSpan="6" class="p-4 text-center text-slate-400 italic">لا يوجد موظفين حاضرين مسكنين على هذا الخط اليوم.</td></tr>`;
+                }
+
+                printArea.innerHTML += `
+                    <div class="bg-slate-50/50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
+                        <div class="flex flex-col md:flex-row justify-between bg-slate-900 p-3.5 rounded-xl text-white gap-2">
+                            <strong class="text-sm font-black">🚌 خط: ${veh.name} | السائق: ${veh.driver}</strong>
+                            <div class="flex items-center gap-4 text-xs font-semibold text-slate-300">
+                                <span>خط السير: ${veh.route}</span>
+                                <span class="bg-purple-800 text-purple-100 px-2 py-0.5 rounded">الركاب: ${passengersCount} من ${veh.capacity}</span>
+                            </div>
+                        </div>
+                        <table class="w-full text-right text-[11px] border-collapse">
+                            <thead>
+                                <tr class="bg-slate-200/60 text-slate-600 border-b border-slate-300">
+                                    <th class="p-3 text-center w-12">كود</th>
+                                    <th class="p-3 text-right">اسم الموظف</th>
+                                    <th class="p-3 text-right">القسم</th>
+                                    <th class="p-3 text-right">الوظيفة</th>
+                                    <th class="p-3 text-right">محل الإقامة</th>
+                                    <th class="p-3 text-center">تفاصيل الرحلة</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                    </div>
+                `;
+            });
+        }
+
+        // ==========================
+        // NEW FEATURE: PRINT & EXCEL EXPORT DIALOG
+        // ==========================
+        function openPrintModal(reportType) {
+            document.getElementById('current-print-report-type').value = reportType;
+            document.getElementById('modal-print-options').classList.remove('hidden');
+        }
+
+        function closePrintModal() {
+            document.getElementById('modal-print-options').classList.add('hidden');
+        }
+
+        function triggerPdfA4Print() {
+            closePrintModal();
+            window.print();
+        }
+
+        // Structured Excel Exporter using SheetJS
+        function triggerExcelReportExport() {
+            const reportType = document.getElementById('current-print-report-type').value;
+            closePrintModal();
+
+            try {
+                const data = [];
+                const today = state.selectedDate;
+
+                if (reportType === 'overtime_transports') {
+                    // Header rows
+                    data.push(["نظام المراقب وخطوط الحركة - تقرير السهر والانتقالات الموحد"]);
+                    data.push([`تاريخ التشغيل اليومي: ${today}`]);
+                    data.push([]); // Empty row
+                    
+                    // Table headers
+                    data.push(["كود الموظف", "اسم الموظف", "القسم", "الوظيفة", "حالة الحضور", "ساعات السهر", "سيارة الحركة", "اتجاه الحركة"]);
+                    
+                    state.employees.forEach(emp => {
+                        const rec = getAttRecord(emp.id);
+                        const vName = rec.present && rec.transport !== 'none' 
+                            ? (state.vehicles.find(v => v.id === rec.transport)?.name || 'مسكن') 
+                            : 'بدون';
+
+                        data.push([
+                            emp.id,
+                            emp.name,
+                            emp.department,
+                            emp.title,
+                            rec.present ? "حاضر" : "غائب",
+                            rec.overtime || "بدون",
+                            vName,
+                            rec.present ? (rec.direction || "ذهاب وإياب") : "-"
+                        ]);
+                    });
+                } else if (reportType === 'cars') {
+                    data.push(["نظام المراقب وخطوط الحركة - كشف حركة وسحب حافلات الموظفين الموحد"]);
+                    data.push([`تاريخ اليوم الفعلي: ${today}`]);
+                    data.push([]); // Empty row
+
+                    state.vehicles.forEach(veh => {
+                        data.push([`🚌 خط حافلة: ${veh.name}`, `سائق: ${veh.driver}`, `خط سير الحافلة: ${veh.route}`]);
+                        data.push(["كود الموظف", "اسم الموظف", "القسم", "الوظيفة", "محل الإقامة", "مسار واتجاه الرحلة"]);
+
+                        let count = 0;
+                        state.employees.forEach(emp => {
+                            const rec = getAttRecord(emp.id);
+                            if (rec.present && rec.transport === veh.id) {
+                                count++;
+                                data.push([
+                                    emp.id,
+                                    emp.name,
+                                    emp.department,
+                                    emp.title,
+                                    emp.residence || "-",
+                                    rec.direction || "ذهاب وإياب"
+                                ]);
+                            }
+                        });
+
+                        if (count === 0) {
+                            data.push(["لا يوجد ركاب حاضرين مسكنين على هذا الخط اليوم."]);
+                        }
+                        data.push([]); // Blank separator row
+                    });
+                }
+
+                // Generate book and sheet
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(data);
+
+                // Auto-fit column widths
+                const wscols = [
+                    {wch: 10}, // Code
+                    {wch: 25}, // Name
+                    {wch: 18}, // Dept
+                    {wch: 18}, // Title
+                    {wch: 12}, // Present
+                    {wch: 15}, // Overtime
+                    {wch: 15}, // Vehicle
+                    {wch: 15}  // Direction
+                ];
+                ws['!cols'] = wscols;
+
+                XLSX.utils.book_append_sheet(wb, ws, "تقرير الحركة المجمع");
+                
+                // Trigger download
+                XLSX.writeFile(wb, `${reportType}_Report_${today}.xlsx`);
+                showNotification("✓ تم بنجاح تصدير تقرير إكسيل منظم ومنسق لورقة A4!");
+            } catch (err) {
+                console.error(err);
+                showNotification("عفواً! فشل تصدير شيت الإكسيل، يرجى المحاولة لاحقاً.");
+            }
+        }
+
+        // ===================================
+        // 6. WHATSAPP CONSOLIDATED IMAGE & TEXT
+        // ===================================
+        function getReportText(type) {
+            let text = "";
+            const today = state.selectedDate;
+
+            if (type === 'depts') {
+                text += `📋 *كشف حضور وسهر الأقسام اليومي الموحد*\n`;
+                text += `📅 التاريخ: ${today}\n\n`;
+
+                const depts = {};
+                state.employees.forEach(emp => {
+                    const dept = emp.department || 'عام';
+                    if (!depts[dept]) depts[dept] = [];
+                    depts[dept].push(emp);
+                });
+
+                Object.entries(depts).forEach(([deptName, members]) => {
+                    text += `*🏢 قسم: ${deptName}*\n`;
+                    let hasPresent = false;
+                    members.forEach(emp => {
+                        const rec = getAttRecord(emp.id);
+                        if (rec.present) {
+                            hasPresent = true;
+                            let details = '';
+                            if (rec.overtime !== 'بدون') details += ` (سهر: ${rec.overtime})`;
+                            if (rec.transport !== 'none') {
+                                const v = state.vehicles.find(v => v.id === rec.transport);
+                                details += ` (سيارة: ${v ? v.name : 'مسكن'})`;
+                            }
+                            text += ` • ${emp.name} - حاضر${details}\n`;
+                        }
+                    });
+
+                    // List absent too
+                    let absents = members.filter(emp => !getAttRecord(emp.id).present);
+                    if (absents.length > 0) {
+                        text += ` ❌ غياب: ` + absents.map(e => e.name).join('، ') + `\n`;
+                    }
+                    text += `\n`;
+                });
+            } else {
+                text += `🚌 *بيان وتسكين حركة حافلات الموظفين الموحد*\n`;
+                text += `📅 تاريخ اليوم: ${today}\n\n`;
+
+                state.vehicles.forEach(veh => {
+                    text += `*خط: ${veh.name} (قائد الحافلة: ${veh.driver})*\n`;
+                    text += `📍 خط السير: ${veh.route}\n`;
+                    
+                    let passengers = [];
+                    state.employees.forEach(emp => {
+                        const rec = getAttRecord(emp.id);
+                        if (rec.present && rec.transport === veh.id) {
+                            passengers.push(`${emp.name} (${rec.direction})`);
+                        }
+                    });
+
+                    if (passengers.length > 0) {
+                        text += ` 👥 الركاب (${passengers.length}):\n`;
+                        passengers.forEach(p => {
+                            text += `   • ${p}\n`;
+                        });
+                    } else {
+                        text += ` 👥 الركاب: لا يوجد ركاب اليوم على هذا الخط.\n`;
+                    }
+                    text += `\n`;
+                });
+            }
+
+            return text.trim();
+        }
+
+        // Copy plain text reports
+        function copyReportText(type) {
+            const text = getReportText(type);
+            
+            // Older browser friendly copy
+            const tempInput = document.createElement("textarea");
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            
+            showNotification("✓ تم نسخ تقرير الواتساب المكتوب بنجاح! يمكنك الآن لصقه مباشرة.");
+        }
+
+        // Consolidated High-resolution capture (Zero lag Windows 7 fallback)
+        function captureConsolidatedReport(type) {
+            const previewTitle = document.getElementById('whatsapp-preview-title');
+            const attachedText = document.getElementById('whatsapp-attached-text');
+            const successView = document.getElementById('whatsapp-success-view');
+            const loading = document.getElementById('whatsapp-loading-indicator');
+            const modal = document.getElementById('modal-whatsapp');
+
+            previewTitle.innerText = type === 'depts' ? "معاينة كشف الأقسام الموحد" : "معاينة كشف السيارات الموحد";
+            attachedText.innerText = getReportText(type);
+
+            modal.classList.remove('hidden');
+            loading.classList.remove('hidden');
+            successView.classList.add('hidden');
+
+            const sourceElement = type === 'depts' ? document.getElementById('report-depts-print-area') : document.getElementById('report-cars-print-area');
+
+            setTimeout(() => {
+                html2canvas(sourceElement, {
+                    scale: 2, // High resolution for clear WhatsApp text
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    logging: false
+                }).then(canvas => {
+                    const dataUrl = canvas.toDataURL('image/png');
+                    document.getElementById('whatsapp-output-image').src = dataUrl;
+                    
+                    loading.classList.add('hidden');
+                    successView.classList.remove('hidden');
+                }).catch(err => {
+                    console.error("Canvas capture failed", err);
+                    showNotification("تعذر تصوير الجدول كصورة في المتصفح القديم؛ يرجى نسخ التقرير المكتوب.");
+                    closeWhatsappModal();
+                });
+            }, 800);
+        }
+
+        function closeWhatsappModal() {
+            document.getElementById('whatsapp-modal').classList.add('hidden');
+        }
+
+        function downloadWhatsappImage() {
+            const img = document.getElementById('whatsapp-output-image').src;
+            if (!img) return;
+            const link = document.createElement('a');
+            link.download = state.selectedDate + "_consolidated_report.png";
+            link.href = img;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function copyWhatsappImage() {
+            const dataUrl = document.getElementById('whatsapp-output-image').src;
+            if (!dataUrl) return;
+
+            // Attempt clipboard API copying (supports modern Chrome on Windows 7)
+            fetch(dataUrl)
+            .then(res => res.blob())
+            .then(blob => {
+                navigator.clipboard.write([
+                    new ClipboardItem({ [blob.type]: blob })
+                ]).then(() => {
+                    showNotification("✓ تم نسخ كارت التقرير الموحد! اذهب للواتساب واضغط لصق (Ctrl+V).");
+                }).catch(err => {
+                    // Fallback to downloading
+                    downloadWhatsappImage();
+                    showNotification("تعذر النسخ التلقائي في المتصفح الحالي؛ تم تحميل الكرت كصورة لجهازك.");
+                });
+            }).catch(() => {
+                downloadWhatsappImage();
+            });
+        }
+    </script>
+</body>
+</html>
